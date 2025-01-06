@@ -61,7 +61,6 @@ Atualize o sistema, instale o Git, e configure o Node.js com NVM:
 - Baixe e instale o NVM:  
    ```bash
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-   source ~/.nvm/nvm.sh
    ```
 
     ```bash
