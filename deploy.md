@@ -151,6 +151,8 @@ Se estiver tudo certo, a aplicação estará rodando.
 
 ![8-ec2](https://github.com/user-attachments/assets/068cfa69-5bbb-4f60-a2ad-2b468b2bb8d2)
 
+Aperte CTRL + C para derrubar a aplicação e voltar pro terminal cara continuar o passo a passo.
+
 ---
 
 ### **Passo 9**  
