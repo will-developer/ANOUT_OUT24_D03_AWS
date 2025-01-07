@@ -155,33 +155,8 @@ Aperte CTRL + C para derrubar a aplicação e voltar pro terminal cara continuar
 
 ---
 
+
 ### **Passo 9**  
-Instale o PM2 para gerenciar a aplicação:  
-
-1. Instale o PM2 globalmente:  
-   ```bash
-   npm install -g pm2
-   ```
-
-2. Inicie a aplicação com o PM2:  
-   ```bash
-   pm2 start dist/src/main.js --name "nest-app"
-   ```
-
-3. Configure o PM2 para iniciar automaticamente após reinicialização:  
-   ```bash
-   pm2 startup
-   ```
-
-   ```bash
-   pm2 save
-   ```
-
-![9-ec2](https://github.com/user-attachments/assets/2d7019c2-9026-4e35-b8b6-04d05f88488d)
-
----
-
-### **Passo 10**  
 Configure o `.env` para conectar ao banco de dados:  
 
 - Crie o `.env` a partir do `.env.example`:  
@@ -203,7 +178,7 @@ Para salvar e sair: pressione `CTRL + O`, `Enter`, e `CTRL + X`.
 
 ---
 
-### **Passo 11**  
+### **Passo 10**  
 Finalize a configuração da aplicação com Prisma:  
 
 - Gere o cliente Prisma:  
@@ -226,12 +201,30 @@ Finalize a configuração da aplicação com Prisma:
 ---
 
 ### **Passo 12**  
-Acesse a aplicação:  
+Instale o PM2 Acesse a aplicação:  
 
-- Suba a aplicação novamente:  
+1. Instale o PM2 globalmente:  
    ```bash
-   npm run start
+   npm install -g pm2
    ```
+
+2. Inicie a aplicação com o PM2:  
+   ```bash
+   pm2 start dist/src/main.js --name "nest-app"
+   ```
+
+3. Configure o PM2 para iniciar automaticamente mesmo com o terminal fechado:  
+   ```bash
+   pm2 startup
+   ```
+
+   ```bash
+   pm2 save
+   ```
+
+![9-ec2](https://github.com/user-attachments/assets/2d7019c2-9026-4e35-b8b6-04d05f88488d)
+
+---
 
 - Copie o **Public IPv4 address** da instância da API.  
 
@@ -247,3 +240,101 @@ Acesse a aplicação:
 
 
 --- 
+
+
+***BONUS***
+
+### **Configurando o GitHub Actions para Deploy na EC2**
+
+#### **1. Converter a chave `.ppk` para `.pem`**
+1. Abra o **PuTTYgen**.
+2. Clique em **Conversions > Export OpenSSH Key**.
+4. Salve o arquivo com o nome `nomedoarquivo.pem`.
+
+![1s](https://github.com/user-attachments/assets/44c95901-18ef-49a6-9058-ec0c61f417af)
+
+6. Abra o arquivo salvo com um editor de texto (Bloco de Notas ou VS Code).
+
+![3s](https://github.com/user-attachments/assets/1e7ac7c5-ace7-40d3-8f7e-7666a558b9c3)
+
+7. Copie o conteúdo da chave privada
+
+![4s](https://github.com/user-attachments/assets/b9896d78-ceca-46fc-b623-c2bf0a35a4c0)
+![5s](https://github.com/user-attachments/assets/1ba65f50-a7e7-4dd8-88c8-fc39049ae172)
+![6s](https://github.com/user-attachments/assets/8d5fc669-69e6-40dd-b84b-2feebdd42a36)
+
+---
+
+#### **2. Adicionar a chave no GitHub como Secret**
+1. Acesse o repositório do projeto no GitHub.
+2. Vá em **Settings > Secrets and variables > Actions > New repository secret**.
+
+![7s](https://github.com/user-attachments/assets/aaab0e0c-40c7-480e-880c-00b0b5b6065a)
+
+4. No campo **Name**, insira:  
+   `EC2_SSH_KEY`
+
+6. No campo **Value**, cole a chave privada que copiou no passo anterior.
+
+![8s](https://github.com/user-attachments/assets/2bf38d15-0a6f-4320-bf84-6e77cab50494)
+
+---
+
+#### **3. Configurar o Workflow no GitHub Actions**
+1. No seu projeto, crie a seguinte estrutura de diretórios:  
+   `.github/workflows/`
+2. Dentro de `workflows`, crie um arquivo chamado `deploy.yml`.
+3. Insira o seguinte conteúdo no arquivo:
+
+```yaml
+name: Push-to-EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+
+      - name: Copy files with SSH
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          ARGS: "-rltgoDzvO --delete"
+          SOURCE: "./"
+          REMOTE_HOST: "DNS_IPV4_PUBLICO_DA_SUA_INSTANCIA"
+          REMOTE_USER: "ec2-user"
+          TARGET: "/home/ec2-user"
+          EXCLUDE: "/dist/, /node_modules/, **.env, rebuild_app.sh, watcher.sh"
+
+      - name: Post-deploy commands
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@DNS_IPV4_PUBLICO_DA_SUA_INSTANCIA << 'EOF'
+          cd /home/ec2-user
+          npm install
+          pm2 restart all || pm2 start dist/src/main.js --name "nest-app"
+          EOF
+```
+
+---
+
+#### **4. Atualizar o DNS no Código**
+- No arquivo `deploy.yml`, substitua `DNS_IPV4_PUBLICO_DA_SUA_INSTANCIA` pelo endereço **IPv4 Público** da sua instância EC2 (sem os parênteses).
+
+---
+
+![9s](https://github.com/user-attachments/assets/02aaad4c-3c3c-4190-897f-c702f0e7b03e)
+
+#### **5. Deploy**
+1. Faça um `git push` para enviar o arquivo `deploy.yml` para o repositório.
+2. Se estiver trabalhando em uma branch, faça o merge para a branch `main`.
+3. O GitHub Actions será executado automaticamente e fará o deploy na sua instância EC2.
+
+---
