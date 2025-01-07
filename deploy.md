@@ -338,3 +338,6 @@ jobs:
 3. O GitHub Actions será executado automaticamente e fará o deploy na sua instância EC2.
 
 ---
+
+![10s](https://github.com/user-attachments/assets/14bbe7d7-a1aa-4ce7-9c26-0ad38d416968)
+
